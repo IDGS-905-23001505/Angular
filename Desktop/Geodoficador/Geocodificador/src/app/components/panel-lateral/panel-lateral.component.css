@@ -1,5 +1,3 @@
-/* Añade estas clases al final de tu archivo CSS */
-
 .nav-link {
   display: flex;
   align-items: center;
@@ -38,7 +36,6 @@
   font-size: 0.95rem;
 }
 
-/* Opcional: animación para el icono cuando está activo */
 .nav-link.active .nav-icon {
   animation: pulse 1.5s infinite;
 }

@@ -1,7 +1,4 @@
-<!-- ========== CONTENIDO PRINCIPAL ========== -->
 <div class="dashboard-container" [class.sidebar-open]="sidebarOpen">
-
-  <!-- Header Mejorado -->
   <header class="dashboard-header">
     <div class="header-main">
       <div class="header-left">
@@ -10,7 +7,6 @@
     </div>
   </header>
 
-  <!-- Loading State -->
   <div *ngIf="cargando" class="loading-overlay">
     <div class="loading-content">
       <div class="spinner"></div>
@@ -24,7 +20,6 @@
     </div>
   </div>
 
-  <!-- Error State -->
   <div *ngIf="error && !cargando" class="error-message">
     <div class="error-content">
       <div class="error-icon">⚠️</div>
@@ -39,9 +34,7 @@
     </div>
   </div>
 
-  <!-- Main Content -->
   <div *ngIf="!cargando && direccionesProcesadas.length > 0" class="main-content">
-    <!-- Table Container -->
     <div class="table-container">
       <div class="table-wrapper">
         <table class="data-table">
@@ -49,7 +42,6 @@
             <tr>
               <th class="sticky-col index-col">#</th>
 
-              <!-- IDs -->
               <th *ngIf="columnasVisibles['id_salida']"
                   (click)="ordenarPor('id_salida')"
                   [class.sorted]="columnaOrden === 'id_salida'"
@@ -66,18 +58,15 @@
                 <span class="sort-icon">{{ columnaOrden === 'id_entrada' ? (ordenAscendente ? '▲' : '▼') : '' }}</span>
               </th>
 
-              <!-- Dirección -->
               <th *ngIf="columnasVisibles['direccion_original']" class="wide-column">
                 Dirección
               </th>
 
-              <!-- Ubicación -->
               <th *ngIf="columnasVisibles['colonia']">Colonia</th>
               <th *ngIf="columnasVisibles['alcaldia_municipio']">Municipio</th>
               <th *ngIf="columnasVisibles['entidad_federativa']">Estado</th>
               <th *ngIf="columnasVisibles['codigopostal']">CP</th>
 
-              <!-- Coordenadas -->
               <th *ngIf="columnasVisibles['latitud']"
                   (click)="ordenarPor('latitud')"
                   [class.sorted]="columnaOrden === 'latitud'"
@@ -94,10 +83,8 @@
                 <span class="sort-icon">{{ columnaOrden === 'longitud' ? (ordenAscendente ? '▲' : '▼') : '' }}</span>
               </th>
 
-              <!-- Confianza -->
               <th *ngIf="columnasVisibles['confianza']">Confianza</th>
 
-              <!-- Acciones -->
               <th class="sticky-col actions-col">Acciones</th>
             </tr>
           </thead>
@@ -106,11 +93,9 @@
             <tr *ngFor="let item of registrosPaginaActual; let i = index">
               <td class="sticky-col index-col">{{ (paginaActual - 1) * registrosPorPagina + i + 1 }}</td>
 
-              <!-- IDs -->
               <td *ngIf="columnasVisibles['id_salida']" class="id-cell">{{ item.id_salida }}</td>
               <td *ngIf="columnasVisibles['id_entrada']" class="id-cell">{{ item.id_entrada }}</td>
 
-              <!-- Dirección -->
               <td *ngIf="columnasVisibles['direccion_original']" class="address-cell">
                 <div class="address-content">
                   <div class="address-text">{{ item.direccion_original }}</div>
@@ -124,13 +109,11 @@
                 </div>
               </td>
 
-              <!-- Ubicación -->
               <td *ngIf="columnasVisibles['colonia']">{{ item.colonia }}</td>
               <td *ngIf="columnasVisibles['alcaldia_municipio']">{{ item.alcaldia_municipio }}</td>
               <td *ngIf="columnasVisibles['entidad_federativa']">{{ item.entidad_federativa }}</td>
               <td *ngIf="columnasVisibles['codigopostal']" class="text-center">{{ item.codigopostal }}</td>
 
-              <!-- Coordenadas -->
               <td *ngIf="columnasVisibles['latitud']" class="coord-cell">
                 <span *ngIf="item.latitud" class="coord-value">{{ item.latitud | number:'1.6-6' }}</span>
                 <span *ngIf="!item.latitud" class="no-coord-text">N/A</span>
@@ -141,7 +124,6 @@
                 <span *ngIf="!item.longitud" class="no-coord-text">N/A</span>
               </td>
 
-              <!-- Confianza -->
               <td *ngIf="columnasVisibles['confianza']" class="confidence-cell">
                 <div class="confidence-display">
                   <div class="confidence-bar">
@@ -151,17 +133,14 @@
                 </div>
               </td>
 
-              <!-- Acciones -->
               <td class="sticky-col actions-col">
                 <div class="actions-container">
-                  <!-- Botón de editar (lápiz) -->
                   <button (click)="editarRegistro(item)"
                           class="btn-icon-only btn-edit"
                           title="Editar registro">
                     ✏️
                   </button>
 
-                  <!-- Botón de eliminar (basura) -->
                   <button (click)="eliminarRegistro(item)"
                           class="btn-icon-only btn-delete"
                           title="Eliminar registro">
@@ -174,7 +153,6 @@
         </table>
       </div>
 
-      <!-- Pagination -->
       <div class="pagination-bottom">
         <div class="pagination-info">
           Mostrando <strong>{{ calcularInicioRegistros() }}</strong> a
@@ -208,7 +186,6 @@
     </div>
   </div>
 
-  <!-- Empty State -->
   <div *ngIf="!cargando && direccionesProcesadas.length === 0 && !error" class="no-data">
     <div class="no-data-content">
       <div class="no-data-icon">📭</div>
@@ -222,5 +199,4 @@
   </div>
 </div>
 
-<!-- Overlay para cerrar sidebar en móvil -->
 <div class="sidebar-open-overlay" *ngIf="sidebarOpen" (click)="toggleSidebar()"></div>

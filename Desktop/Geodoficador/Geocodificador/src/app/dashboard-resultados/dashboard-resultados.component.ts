@@ -32,17 +32,6 @@ interface ApiResponse {
   total?: number;
 }
 
-interface Lote {
-  id_lote: number;
-  nombre_archivo: string;
-  total_registros: number;
-  fecha_carga: string;
-  estatus: string;
-  entradas?: number;
-  salidas?: number;
-  porcentaje_procesado?: string;
-}
-
 @Component({
   selector: 'app-dashboard-resultados',
   standalone: true,
@@ -51,40 +40,27 @@ interface Lote {
   styleUrls: ['./dashboard-resultados.component.css']
 })
 export class DashboardResultadosComponent implements OnInit, AfterViewInit, OnDestroy {
-  // Inyecciones
   private estadisticaService = inject(EstadisticaService);
   private http = inject(HttpClient);
   private cdRef = inject(ChangeDetectorRef);
   private router = inject(Router);
 
-  // Subscripciones
   private dataSubscription = new Subscription();
 
-  // Datos (públicos para el template)
-  estadisticas: Estadisticas = this.getEstadisticasIniciales();
-  calidadDatos: CalidadDatos = this.getCalidadInicial();
+  estadisticas: Estadisticas = { totalRegistros: 0, exactos: 0, revision: 0, fallidos: 0 };
+  calidadDatos: CalidadDatos = { alta: 0, medio: 0, bajo: 0, muyBajo: 0 };
 
-  // Estados (públicos para el template)
   isLoading = true;
   hasError = false;
   errorMessage = '';
   datosCargados = false;
   today = new Date();
 
-  // Nuevas variables para el selector de lotes
-  mostrarSelectorLotes = false;
-  cargandoLotes = false;
-  errorCargarLotes = '';
-  lotes: Lote[] = [];
-  lotesFiltrados: Lote[] = [];
-  busquedaLote = '';
-  descargandoLote: number | null = null;
-  formatoDescarga: 'excel' | 'csv' | 'json' = 'excel';
+  descargando = false;
+  formatoDescarga: 'excel' | 'csv' = 'excel';
 
-  // Gráfica
   private chart: Chart | null = null;
 
-  // Constantes
   private readonly COLORS = ['#10B981', '#3B82F6', '#F59E0B', '#EF4444'];
   private readonly CHART_OPTIONS = {
     responsive: true,
@@ -109,7 +85,6 @@ export class DashboardResultadosComponent implements OnInit, AfterViewInit, OnDe
     cutout: '65%'
   };
 
-  // Getters públicos para el template
   get porcentajeExactos(): string { return this.calcularPorcentaje(this.estadisticas.exactos); }
   get porcentajeRevision(): string { return this.calcularPorcentaje(this.estadisticas.revision); }
   get porcentajeFallidos(): string { return this.calcularPorcentaje(this.estadisticas.fallidos); }
@@ -119,21 +94,21 @@ export class DashboardResultadosComponent implements OnInit, AfterViewInit, OnDe
   }
 
   ngAfterViewInit(): void {
-    // Vista inicializada
   }
 
   ngOnDestroy(): void {
     this.cleanup();
   }
 
-  // ========== MÉTODOS PÚBLICOS PARA EL TEMPLATE ==========
-
   cargarEstadisticas(): void {
-    this.prepararCarga();
+    this.isLoading = true;
+    this.hasError = false;
+    this.errorMessage = '';
+    this.dataSubscription.unsubscribe();
 
     this.dataSubscription = this.estadisticaService.obtenerDashboard().subscribe({
-      next: (data) => this.procesarRespuesta(data),
-      error: (error) => this.manejarError(error)
+      next: (data: ApiResponse) => this.procesarRespuesta(data),
+      error: (error: Error) => this.manejarError(error)
     });
   }
 
@@ -152,134 +127,70 @@ export class DashboardResultadosComponent implements OnInit, AfterViewInit, OnDe
     });
   }
 
-  // ========== NUEVO: Descarga directa sin selector ==========
   descargarReporteDirecto(): void {
     if (!this.datosCargados || this.estadisticas.totalRegistros === 0) {
       alert('No hay datos para descargar');
       return;
     }
 
-    console.log('🔍 Abriendo selector de lotes...');
-    this.abrirSelectorLotes();
-  }
+    if (this.descargando) return;
 
-  // ========== MÉTODOS PARA DESCARGA POR LOTE ==========
-
-  abrirSelectorLotes(): void {
-    if (!this.datosCargados || this.estadisticas.totalRegistros === 0) {
-      alert('No hay datos para generar un reporte');
-      return;
-    }
-
-    this.mostrarSelectorLotes = true;
-    this.cargarLotes();
-  }
-
-  cerrarSelectorLotes(): void {
-    this.mostrarSelectorLotes = false;
-    this.busquedaLote = '';
-    this.lotesFiltrados = [...this.lotes];
-    this.descargandoLote = null;
-    this.cdRef.detectChanges();
-  }
-
-  cargarLotes(): void {
-    this.cargandoLotes = true;
-    this.errorCargarLotes = '';
+    this.descargando = true;
 
     this.http.get<any>('http://localhost:3000/api/lotes/disponibles')
       .subscribe({
-        next: (response) => {
-          if (response.success && response.lotes) {
-            this.lotes = response.lotes.map((lote: any) => ({
-              id_lote: lote.id_lote,
-              nombre_archivo: lote.nombre_archivo || lote.nombre_archivo_original || 'Sin nombre',
-              total_registros: lote.total_registros || 0,
-              fecha_carga: lote.fecha_carga,
-              estatus: lote.estatus || 'desconocido',
-              entradas: lote.entradas || 0,
-              salidas: lote.salidas || 0,
-              porcentaje_procesado: lote.porcentaje_procesado || '0%'
-            }));
-            this.lotesFiltrados = [...this.lotes];
+        next: (response: any) => {
+          if (response.success && response.lotes && response.lotes.length > 0) {
+            const ultimoLote = response.lotes[0];
+            const idLote = ultimoLote.id_lote;
+
+            this.descargarReporte(idLote);
           } else {
-            this.errorCargarLotes = response.error || 'Error al cargar lotes';
+            alert('No hay lotes disponibles para descargar');
+            this.descargando = false;
           }
-          this.cargandoLotes = false;
-          this.cdRef.detectChanges();
         },
-        error: (error) => {
-          this.errorCargarLotes = error.message || 'Error de conexión';
-          this.cargandoLotes = false;
-          this.cdRef.detectChanges();
+        error: (error: Error) => {
+          alert(`❌ Error al obtener lotes: ${error.message}`);
+          this.descargando = false;
         }
       });
   }
 
-  filtrarLotes(): void {
-    if (!this.busquedaLote.trim()) {
-      this.lotesFiltrados = [...this.lotes];
-      return;
-    }
+  private descargarReporte(idLote: number): void {
+    this.http.get(`http://localhost:3000/api/lotes/${idLote}/descargar?formato=${this.formatoDescarga}`, {
+      responseType: 'blob'
+    })
+      .subscribe({
+        next: (blob: Blob) => {
+          const extension = this.getExtension(this.formatoDescarga);
+          const nombreArchivo = `reporte-lote-${idLote}-${new Date().toISOString().slice(0, 10)}.${extension}`;
 
-    const busqueda = this.busquedaLote.toLowerCase().trim();
-    this.lotesFiltrados = this.lotes.filter(lote =>
-      lote.id_lote.toString().includes(busqueda) ||
-      lote.nombre_archivo.toLowerCase().includes(busqueda)
-    );
-  }
+          const url = window.URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = nombreArchivo;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          window.URL.revokeObjectURL(url);
 
-  descargarReporteLote(idLote: number): void {
-    if (this.descargandoLote) return;
-
-    this.descargandoLote = idLote;
-    console.log(`⬇️ Iniciando descarga del lote ${idLote} en formato ${this.formatoDescarga}...`);
-
-    // Construir URL
-    const url = `http://localhost:3000/api/lotes/${idLote}/descargar?formato=${this.formatoDescarga}`;
-
-    // Método 1: Crear elemento <a> oculto (más confiable)
-    const link = document.createElement('a');
-    link.href = url;
-    link.target = '_blank';
-    link.rel = 'noopener noreferrer';
-
-    // Nombre del archivo
-    const extension = this.getExtension(this.formatoDescarga);
-    const nombreArchivo = `reporte-lote-${idLote}-${new Date().toISOString().slice(0, 10)}.${extension}`;
-    link.download = nombreArchivo;
-
-    // Añadir al DOM y hacer click
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
-    // Método 2 alternativo: Abrir en nueva pestaña
-    // window.open(url, '_blank');
-
-    // Mostrar mensaje de éxito
-    setTimeout(() => {
-      alert(`✅ Reporte "${nombreArchivo}" se está descargando.`);
-      this.descargandoLote = null;
-      this.cdRef.detectChanges();
-    }, 500);
+          alert(`✅ Reporte "${nombreArchivo}" se descargó exitosamente.`);
+          this.descargando = false;
+        },
+        error: (error: Error) => {
+          alert(`❌ Error al descargar el reporte: ${error.message}`);
+          this.descargando = false;
+        }
+      });
   }
 
   private getExtension(formato: string): string {
     switch (formato) {
       case 'excel': return 'xlsx';
       case 'csv': return 'csv';
-      case 'json': return 'json';
       default: return 'xlsx';
     }
-  }
-
-  // ========== MÉTODOS PRIVADOS ==========
-
-  private prepararCarga(): void {
-    this.isLoading = true;
-    this.resetEstados();
-    this.limpiarSubscripcion();
   }
 
   private procesarRespuesta(data: ApiResponse): void {
@@ -288,20 +199,19 @@ export class DashboardResultadosComponent implements OnInit, AfterViewInit, OnDe
     } else {
       this.procesarDatos(data);
       this.datosCargados = true;
-      this.inicializarGraficaConRetraso();
+      setTimeout(() => this.inicializarGrafica(), 100);
     }
 
     this.isLoading = false;
     this.cdRef.detectChanges();
   }
 
-  private manejarError(error: any): void {
+  private manejarError(error: Error): void {
     console.error('❌ Error:', error);
     this.hasError = true;
     this.errorMessage = error.message || 'Error al conectar con el servidor';
     this.isLoading = false;
     this.datosCargados = false;
-    this.mostrarErrorConexion();
     this.cdRef.detectChanges();
   }
 
@@ -382,10 +292,6 @@ export class DashboardResultadosComponent implements OnInit, AfterViewInit, OnDe
     }
   }
 
-  private inicializarGraficaConRetraso(): void {
-    setTimeout(() => this.inicializarGrafica(), 100);
-  }
-
   private obtenerDatosGrafica() {
     return {
       labels: [
@@ -422,11 +328,6 @@ export class DashboardResultadosComponent implements OnInit, AfterViewInit, OnDe
     this.resetDatos();
   }
 
-  private mostrarErrorConexion(): void {
-    this.datosCargados = false;
-    this.resetDatos();
-  }
-
   private mostrarMensajeGraficaVacia(): void {
     const chartContainer = document.querySelector('.chart-container');
     if (chartContainer) {
@@ -445,26 +346,10 @@ export class DashboardResultadosComponent implements OnInit, AfterViewInit, OnDe
     return ((valor / this.estadisticas.totalRegistros) * 100).toFixed(1) + '%';
   }
 
-  // ========== MÉTODOS DE LIMPIEZA ==========
-
-  private resetEstados(): void {
-    this.hasError = false;
-    this.errorMessage = '';
-    this.datosCargados = false;
-  }
-
   private resetDatos(): void {
-    this.estadisticas = this.getEstadisticasIniciales();
-    this.calidadDatos = this.getCalidadInicial();
+    this.estadisticas = { totalRegistros: 0, exactos: 0, revision: 0, fallidos: 0 };
+    this.calidadDatos = { alta: 0, medio: 0, bajo: 0, muyBajo: 0 };
     this.destruirGrafica();
-  }
-
-  private getEstadisticasIniciales(): Estadisticas {
-    return { totalRegistros: 0, exactos: 0, revision: 0, fallidos: 0 };
-  }
-
-  private getCalidadInicial(): CalidadDatos {
-    return { alta: 0, medio: 0, bajo: 0, muyBajo: 0 };
   }
 
   private limpiarSubscripcion(): void {
@@ -483,7 +368,6 @@ export class DashboardResultadosComponent implements OnInit, AfterViewInit, OnDe
     this.destruirGrafica();
   }
 
-  // Getter auxiliar
   private get sumaCalidad(): number {
     return Object.values(this.calidadDatos).reduce((a, b) => a + b, 0);
   }

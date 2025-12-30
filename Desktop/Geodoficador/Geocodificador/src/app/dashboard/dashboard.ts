@@ -3,7 +3,6 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DirectionService } from '../services/direction.service';
 
-// Interface para el registro
 interface Direccion {
   id_salida: number;
   id_entrada?: number;
@@ -28,7 +27,6 @@ interface Direccion {
   fecha_actualizacion?: Date;
 }
 
-// Interface para la respuesta de la API
 interface ApiResponse {
   success: boolean;
   message?: string;
@@ -43,18 +41,15 @@ interface ApiResponse {
   styleUrls: ['./dashboard.css']
 })
 export class DashboardComponent implements OnInit {
-  // ========== PROPIEDADES DEL PANEL LATERAL ==========
   sidebarOpen = true;
   paginaSeleccionada = 'tabla';
 
-  // ========== PROPIEDADES EXISTENTES ==========
   direcciones: Direccion[] = [];
   direccionesProcesadas: any[] = [];
   cargando: boolean = false;
   error: string = '';
   totalRegistros: number = 0;
 
-  // Para mostrar/ocultar columnas
   columnasVisibles: {[key: string]: boolean} = {
     id_salida: true,
     id_entrada: true,
@@ -68,17 +63,14 @@ export class DashboardComponent implements OnInit {
     confianza: true
   };
 
-  // Busqueda y filtros
   filtroBusqueda: string = '';
   registrosPorPagina: number = 15;
   paginaActual: number = 1;
   totalPaginas: number = 1;
 
-  // Para ordenamiento
   columnaOrden: string = 'id_salida';
   ordenAscendente: boolean = true;
 
-  // Registro seleccionado para edición
   registroSeleccionado: Direccion | null = null;
   modoEdicion: boolean = false;
 
@@ -88,93 +80,60 @@ export class DashboardComponent implements OnInit {
   ) {}
 
   ngOnInit() {
-    console.log('🔍 DashboardComponent inicializado');
     this.cargarDirecciones();
   }
 
-  // ========== MÉTODOS DEL PANEL LATERAL ==========
   toggleSidebar() {
     this.sidebarOpen = !this.sidebarOpen;
-    console.log('Panel lateral:', this.sidebarOpen ? 'ABIERTO' : 'CERRADO');
     this.cdr.detectChanges();
   }
 
   cambiarPagina(pagina: string) {
     this.paginaSeleccionada = pagina;
-    console.log('Página seleccionada:', pagina);
 
     if (this.modoEdicion) {
       this.cancelarEdicion();
     }
 
-    switch(pagina) {
-      case 'carga':
-        console.log('Mostrando carga de documentos');
-        break;
-      case 'mapa':
-        console.log('Mostrando mapa');
-        break;
-      case 'tabla':
-        console.log('Mostrando tabla de registros');
-        break;
-      case 'grafica':
-        console.log('Mostrando gráficas');
-        break;
-    }
-
     this.cdr.detectChanges();
   }
 
-  // ========== MÉTODOS DE CARGA DE DATOS ==========
-// ========== MÉTODOS DE CARGA DE DATOS ==========
-cargarDirecciones() {
-  console.log('🔄 Iniciando carga de direcciones...');
-  this.cargando = true;
-  this.error = '';
-  this.cdr.detectChanges();
+  cargarDirecciones() {
+    this.cargando = true;
+    this.error = '';
+    this.cdr.detectChanges();
 
-  this.directionService.obtenerTodasDirecciones()
-    .subscribe({
-      next: (datos: any[]) => {
-        console.log('✅ Datos recibidos de API:', datos?.length || 0, 'registros');
+    this.directionService.obtenerTodasDirecciones()
+      .subscribe({
+        next: (datos: any[]) => {
+          if (datos && Array.isArray(datos)) {
+            this.direcciones = datos;
+            this.totalRegistros = datos.length;
+            this.procesarParaTabla();
+            this.calcularPaginacion();
+            this.error = '';
+          } else {
+            this.direcciones = [];
+            this.error = 'No se pudo conectar con el servidor';
+          }
 
-        if (datos && Array.isArray(datos)) {
-          this.direcciones = datos;
-          this.totalRegistros = datos.length;
-          this.procesarParaTabla();
-          this.calcularPaginacion();
-          console.log('✅ Datos procesados correctamente');
-
-          // Limpiar error si hay datos
-          this.error = '';
-        } else {
-          console.warn('⚠️ Datos vacíos o no son array');
-          this.direcciones = [];
+          this.cargando = false;
+          this.cdr.detectChanges();
+        },
+        error: (err: any) => {
           this.error = 'No se pudo conectar con el servidor';
+          this.cargando = false;
+          this.cdr.detectChanges();
         }
-
-        this.cargando = false;
-        this.cdr.detectChanges();
-      },
-      error: (err: any) => {
-        console.error('❌ Error:', err);
-        // Mensaje específico como en la imagen
-        this.error = 'No se pudo conectar con el servidor';
-        this.cargando = false;
-        this.cdr.detectChanges();
-      }
-    });
-}
+      });
+  }
 
   procesarParaTabla() {
-    console.log('🔄 Procesando datos para tabla...');
-
     if (!this.direcciones || this.direcciones.length === 0) {
       this.direccionesProcesadas = [];
       return;
     }
 
-    // Aplicar filtro de búsqueda si existe
     let datosFiltrados = this.direcciones;
     if (this.filtroBusqueda.trim()) {
       const busqueda = this.filtroBusqueda.toLowerCase();
@@ -186,7 +145,6 @@ cargarDirecciones() {
       );
     }
 
-    // Aplicar ordenamiento
     datosFiltrados.sort((a: Direccion, b: Direccion) => {
       const valorA = a[this.columnaOrden as keyof Direccion];
       const valorB = b[this.columnaOrden as keyof Direccion];
@@ -206,47 +164,30 @@ cargarDirecciones() {
         : (valorB < valorA ? -1 : 1);
     });
 
-    // Procesar para visualización
     this.direccionesProcesadas = datosFiltrados.map((item: Direccion, index: number) => ({
-      // IDs
       id_salida: item.id_salida,
       id_entrada: item.id_entrada,
-
-      // Dirección
       direccion_original: item.direccion_original || 'Sin dirección',
       direccion_completa: item.direccion_completa || '',
-
-      // Ubicación
       colonia: item.colonia || '',
       alcaldia_municipio: item.alcaldia_municipio || '',
       entidad_federativa: item.entidad_federativa || '',
       codigopostal: item.codigopostal || '',
-
-      // Coordenadas
       latitud: item.latitud,
       longitud: item.longitud,
-
-      // Confianza
       confianza: item.confianza || 0,
       confianza_porcentaje: item.confianza ? (item.confianza * 100).toFixed(1) + '%' : 'N/A',
-
-      // Para visualización
       index: index + 1,
       tiene_coordenadas: !!(item.latitud && item.longitud),
       calidad: item.calidad || '',
       fuente: item.fuente || '',
-
-      // Guardar original para edición
       datosOriginales: { ...item }
     }));
 
-    // Recalcular paginación
     this.calcularPaginacion();
   }
 
-  // ========== MÉTODOS DE EDICIÓN Y ELIMINACIÓN ==========
   editarRegistro(registro: any) {
-    console.log('📝 Editando registro:', registro.id_salida);
     this.registroSeleccionado = { ...registro.datosOriginales };
     this.modoEdicion = true;
   }
@@ -254,18 +195,12 @@ cargarDirecciones() {
   guardarCambios() {
     if (!this.registroSeleccionado) return;
 
-    console.log('💾 Guardando cambios para:', this.registroSeleccionado.id_salida);
-
-    // CORRECCIÓN: Verificar si el método existe con nombre correcto
-    // Opción 1: Si el método se llama 'updateDirection' en inglés
     if (typeof (this.directionService as any).updateDirection === 'function') {
       (this.directionService as any).updateDirection(this.registroSeleccionado)
         .subscribe({
           next: (respuesta: ApiResponse) => {
-            console.log('✅ Registro actualizado:', respuesta);
             alert('Registro actualizado correctamente');
 
-            // Actualizar en la lista local
             const index = this.direcciones.findIndex(d => d.id_salida === this.registroSeleccionado!.id_salida);
             if (index !== -1) {
               this.direcciones[index] = { ...this.registroSeleccionado! };
@@ -275,17 +210,14 @@ cargarDirecciones() {
             this.cancelarEdicion();
           },
           error: (err: any) => {
-            console.error('❌ Error al actualizar:', err);
             alert('Error al actualizar el registro: ' + err.message);
           }
         });
     }
-    // Opción 2: Si el método se llama 'actualizarDireccion' en español
     else if (typeof (this.directionService as any).actualizarDireccion === 'function') {
       (this.directionService as any).actualizarDireccion(this.registroSeleccionado)
         .subscribe({
           next: (respuesta: ApiResponse) => {
-            console.log('✅ Registro actualizado:', respuesta);
             alert('Registro actualizado correctamente');
 
             const index = this.direcciones.findIndex(d => d.id_salida === this.registroSeleccionado!.id_salida);
@@ -297,15 +229,11 @@ cargarDirecciones() {
             this.cancelarEdicion();
           },
           error: (err: any) => {
-            console.error('❌ Error al actualizar:', err);
             alert('Error al actualizar el registro: ' + err.message);
           }
         });
     }
-    // Opción 3: Modo simulador (cuando no hay método en el servicio)
     else {
-      console.log('🔄 Actualizando localmente (modo simulador)');
-
       const index = this.direcciones.findIndex(d => d.id_salida === this.registroSeleccionado!.id_salida);
       if (index !== -1) {
         this.direcciones[index] = { ...this.registroSeleccionado! };
@@ -328,55 +256,41 @@ cargarDirecciones() {
 
     if (!confirmar) return;
 
-    console.log('🗑️ Eliminando registro:', registro.id_salida);
-
-    // CORRECCIÓN: Verificar si el método existe con nombre correcto
-    // Opción 1: Si el método se llama 'deleteDirection' en inglés
     if (typeof (this.directionService as any).deleteDirection === 'function') {
       (this.directionService as any).deleteDirection(registro.id_salida)
         .subscribe({
           next: (respuesta: ApiResponse) => {
-            console.log('✅ Registro eliminado:', respuesta);
             alert('Registro eliminado correctamente');
 
-            // Eliminar de la lista local
             this.direcciones = this.direcciones.filter(d => d.id_salida !== registro.id_salida);
             this.procesarParaTabla();
           },
           error: (err: any) => {
-            console.error('❌ Error al eliminar:', err);
             alert('Error al eliminar el registro: ' + err.message);
           }
         });
     }
-    // Opción 2: Si el método se llama 'eliminarDireccion' en español
     else if (typeof (this.directionService as any).eliminarDireccion === 'function') {
       (this.directionService as any).eliminarDireccion(registro.id_salida)
         .subscribe({
           next: (respuesta: ApiResponse) => {
-            console.log('✅ Registro eliminado:', respuesta);
             alert('Registro eliminado correctamente');
 
             this.direcciones = this.direcciones.filter(d => d.id_salida !== registro.id_salida);
             this.procesarParaTabla();
           },
           error: (err: any) => {
-            console.error('❌ Error al eliminar:', err);
             alert('Error al eliminar el registro: ' + err.message);
           }
         });
     }
-    // Opción 3: Modo simulador
     else {
-      console.log('🗑️ Eliminando localmente (modo simulador)');
-
       this.direcciones = this.direcciones.filter(d => d.id_salida !== registro.id_salida);
       this.procesarParaTabla();
       alert('Registro eliminado localmente (modo simulador)');
     }
   }
 
-  // ========== MÉTODOS DE PAGINACIÓN ==========
   calcularPaginacion() {
     this.totalPaginas = Math.max(1, Math.ceil(this.direccionesProcesadas.length / this.registrosPorPagina));
     if (this.paginaActual > this.totalPaginas) {
@@ -396,7 +310,6 @@ cargarDirecciones() {
     }
   }
 
-  // ========== MÉTODOS DE ORDENAMIENTO ==========
   ordenarPor(columna: string) {
     if (this.columnaOrden === columna) {
       this.ordenAscendente = !this.ordenAscendente;
@@ -407,7 +320,6 @@ cargarDirecciones() {
     this.procesarParaTabla();
   }
 
-  // ========== MÉTODOS DE BÚSQUEDA Y FILTROS ==========
   onBuscar() {
     this.paginaActual = 1;
     this.procesarParaTabla();
@@ -418,10 +330,8 @@ cargarDirecciones() {
     this.onBuscar();
   }
 
-  // ========== MÉTODOS DE VISUALIZACIÓN ==========
   mostrarDetalles(item: any) {
-    const detalles = `
-📋 DETALLES COMPLETOS DEL REGISTRO
+    const detalles = `📋 DETALLES COMPLETOS DEL REGISTRO
 
 🔢 IDENTIFICADORES:
   ID Salida: ${item.id_salida}
@@ -459,7 +369,6 @@ cargarDirecciones() {
     }
   }
 
-  // ========== MÉTODOS DE EXPORTACIÓN ==========
   exportarCSV() {
     if (this.direccionesProcesadas.length === 0) {
       alert('No hay datos para exportar');
@@ -494,7 +403,6 @@ cargarDirecciones() {
     window.URL.revokeObjectURL(url);
   }
 
-  // ========== MÉTODOS AUXILIARES ==========
   contarConCoordenadas(): number {
     return this.direccionesProcesadas.filter(d => d.tiene_coordenadas).length;
   }
