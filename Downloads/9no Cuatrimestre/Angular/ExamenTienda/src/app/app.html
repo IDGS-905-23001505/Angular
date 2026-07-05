@@ -1,0 +1,19 @@
+<div class="app-container">
+  <header class="cabecera-component">
+    <div class="logo">La Tienda de Toño</div>
+    <nav>
+      <a routerLink="/inicio" routerLinkActive="active">Inicio</a>
+      <a routerLink="/productos" routerLinkActive="active">Productos</a>
+      <a routerLink="/contacto" routerLinkActive="active">Contacto</a>
+    </nav>
+  </header>
+
+  <main class="contenido">
+    <router-outlet></router-outlet>
+  </main>
+
+  <footer class="footer-component">
+    <p>La Tienda de Toño</p>
+    <p>contacto@mitienda.com | 479 222 0836</p>
+  </footer>
+</div>

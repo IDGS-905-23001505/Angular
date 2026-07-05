@@ -1,0 +1,47 @@
+.app-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.cabecera-component {
+  background-color: #ffcad4;
+  padding: 20px;
+  text-align: center;
+  border-bottom: 3px solid #f4978e;
+  color: #4a4a4a;
+}
+
+.contenido {
+  flex: 1;
+  padding: 20px;
+  background-color: #fffafb;
+}
+
+.footer-component {
+  background-color: #f4978e;
+  padding: 15px;
+  text-align: center;
+  color: white;
+}
+
+nav {
+  margin-top: 10px;
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+}
+
+nav a {
+  text-decoration: none;
+  color: #4a4a4a;
+  font-weight: bold;
+  padding: 8px 16px;
+  border-radius: 20px;
+  transition: all 0.3s ease;
+}
+
+nav a:hover {
+  background-color: #f4978e;
+  color: white;
+}

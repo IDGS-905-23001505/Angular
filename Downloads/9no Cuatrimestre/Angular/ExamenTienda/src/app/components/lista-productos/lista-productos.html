@@ -1,0 +1,10 @@
+<div class="galeria-productos">
+  @for (p of productos(); track p.idProducto) {
+  <div class="card">
+    <img [src]="p.imagen" [alt]="p.nombre">
+    <h3>{{ p.nombre }}</h3>
+    <p>{{ p.descripcion }}</p>
+    <p><strong>${{ p.precio }}</strong></p>
+  </div>
+  }
+</div>

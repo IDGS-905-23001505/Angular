@@ -1,0 +1,42 @@
+.hero-section {
+  height: 70vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  background: linear-gradient(135deg, #fffafb 0%, #ffeef2 100%);
+}
+.hero-content {
+  padding: 40px;
+}
+
+h1 {
+  font-size: 4rem;
+  color: #f4978e;
+  margin-bottom: 20px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+.subtitle {
+  font-size: 1.2rem;
+  color: #666;
+  margin-bottom: 30px;
+}
+.btn-catalogo {
+  padding: 15px 40px;
+  font-size: 1.1rem;
+  background-color: #f4978e;
+  color: white;
+  border: none;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: transform 0.2s, background 0.3s;
+  box-shadow: 0 4px 15px rgba(244, 151, 142, 0.4);
+}
+.btn-catalogo:hover {
+  transform: scale(1.05);
+  background-color: #e68a80;
+}
