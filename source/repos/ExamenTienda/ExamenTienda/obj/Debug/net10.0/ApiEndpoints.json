@@ -1,0 +1,65 @@
+[
+  {
+    "ContainingType": "ExamenTienda.Controllers.TiendasController",
+    "Method": "Agregar",
+    "RelativePath": "api/Tiendas/AgregarProducto",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "ExamenTienda.Models.Producto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "ExamenTienda.Controllers.TiendasController",
+    "Method": "Eliminar",
+    "RelativePath": "api/Tiendas/EliminarProducto/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "ExamenTienda.Controllers.TiendasController",
+    "Method": "Lista",
+    "RelativePath": "api/Tiendas/ListaProductos",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "ExamenTienda.Controllers.TiendasController",
+    "Method": "Modificar",
+    "RelativePath": "api/Tiendas/ModificarProducto/{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "request",
+        "Type": "ExamenTienda.Models.Producto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  }
+]
